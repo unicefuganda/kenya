@@ -29,6 +29,7 @@ sys.path.append(os.path.join(filedir, 'rapidsms_unregister'))
 #                          MAIN CONFIGURATION                          #
 # -------------------------------------------------------------------- #
 TIME_ZONE = "Africa/Nairobi"
+ACTIVATION_CODE = 'start'
 OPT_IN_WORDS = ['join']
 OPT_OUT_WORDS = ['quit']
 OPT_OUT_MESSAGE = 'You have just quit.If you want to re-register,or register to a new location,please send the word JOIN to 6767.'
@@ -107,6 +108,7 @@ INSTALLED_APPS = [
 ]
 
 SMS_APPS = [
+    "kenya",
     "script",
     "poll",
     "rapidsms_xforms",
