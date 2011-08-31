@@ -7,7 +7,7 @@
 #                          PATH CONFIGURATION                          #
 # -------------------------------------------------------------------- #
 
-import sys,os
+import sys, os
 filedir = os.path.dirname(__file__)
 sys.path.append(os.path.join(filedir))
 sys.path.append(os.path.join(filedir, 'rapidsms', 'lib'))
@@ -117,6 +117,8 @@ SMS_APPS = [
 # tabbed navigation. when adding an app to INSTALLED_APPS, you may wish
 # to add it here, also, to expose it in the rapidsms ui.
 RAPIDSMS_TABS = [
+    ("kenya-polls", "Polls"),
+    ("contact-messagelog", "Message Log"),
 ]
 
 
@@ -149,7 +151,7 @@ ADMIN_MEDIA_PREFIX = "/static/media/"
 # this is required for the django.contrib.sites tests to run, but also
 # not included in global_settings.py, and is almost always ``1``.
 # see: http://docs.djangoproject.com/en/dev/ref/contrib/sites/
-SITE_ID = 1 
+SITE_ID = 1
 
 
 # the default log settings are very noisy.
