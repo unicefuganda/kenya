@@ -8,10 +8,6 @@ class App (AppBase):
 
     def handle (self, message):
         opt_out_words = getattr(settings, 'OPT_OUT_WORDS', [])
-        print "ACTIVATION CODE IS %s" % getattr(settings, 'ACTIVATION_CODE', 'NOT IN SETTINGS')
-        print "OPT_OUT_WORDS ARE %s" % str(opt_out_words)
-        print "MESSAGE IS '%s'" % message.text.strip().lower()
-        print "MESSAGE IS AN OPT OUT WORD? %s" % str(message.text.strip().lower() in opt_out_words)
         if getattr(settings, 'ACTIVATION_CODE', None) and message.text.strip().lower() == settings.ACTIVATION_CODE:
             if not message.connection.contact:
                 message.respond('You must first register with the system.Text JOIN to 6767 to begin.')

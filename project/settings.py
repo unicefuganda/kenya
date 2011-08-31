@@ -32,7 +32,7 @@ TIME_ZONE = "Africa/Nairobi"
 ACTIVATION_CODE = 'start'
 OPT_IN_WORDS = ['join']
 OPT_OUT_WORDS = ['quit']
-OPT_OUT_MESSAGE = 'You have just quit.If you want to re-register,or register to a new location,please send the word JOIN to 6767.'
+OPT_OUT_CONFIRMATION = 'You have just quit.If you want to re-register,or register to a new location,please send the word JOIN to 6767.'
 # map bounding box
 MIN_LON = '32.849121'
 MAX_LON = '43.461914'
