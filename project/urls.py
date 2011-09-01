@@ -10,6 +10,15 @@ from django.views.generic.simple import direct_to_template
 from generic.views import generic
 from generic.sorters import SimpleSorter
 from poll.models import Poll
+from kenya.views import view_responses
+from kenya.utils import get_polls
+from ureport.models import MassText
+from ureport.forms import AssignToNewPollForm
+from contact.forms import FreeSearchForm, DistictFilterForm, MassTextForm
+from kenya.forms import FacilityFilterForm, GoLiveForm
+from django.contrib.auth.decorators import login_required
+from healthmodels.models.HealthProvider import HealthProviderBase
+from kenya.sorters import LatestSubmissionSorter
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -31,12 +40,14 @@ urlpatterns = patterns('',
     (r'^registration/', include('auth.urls')),
     (r'^scheduler/', include('rapidsms.contrib.scheduler.urls')),
     (r'^polls/', include('poll.urls')),
+    (r'^ureport/', include('ureport.urls')),
     # poll management views using generic (rather than built-in poll views
     url(r'^polladmin/$', generic, {
         'model':Poll,
+        'queryset':get_polls,
         'objects_per_page':10,
         'selectable':False,
-        'partial_row':'ureport/partials/polls/poll_admin_row.html',
+        'partial_row':'kenya/partials/poll_admin_row.html',
         'base_template':'kenya/poll_admin_base.html',
         'results_title':'Polls',
         'sort_column':'start_date',
@@ -47,7 +58,30 @@ urlpatterns = patterns('',
                  ('Closing Date', True, 'end_date', SimpleSorter()),
                  ('', False, '', None)],
     }, name="kenya-polls"),
-) + router_urls + ureport_urls + xform_urls + healthmodels_urls + contact_urls
+    # view responses for a poll (based on generic rather than built-in poll view
+    url(r"^(\d+)/responses/$", view_responses, name="kenya-responses"),
+   #reporters
+    url(r'^reporter/$', login_required(generic), {
+      'model':HealthProviderBase,
+      'filter_forms':[FreeSearchForm, DistictFilterForm, FacilityFilterForm],
+      'action_forms':[MassTextForm, GoLiveForm, AssignToNewPollForm],
+      'objects_per_page':25,
+      'partial_row':'kenya/partials/reporter_row.html',
+      'base_template':'kenya/contacts_base.html',
+      'results_title':'Reporters',
+      'columns':[('Name', True, 'name', SimpleSorter()),
+                 ('Number', True, 'connection__identity', SimpleSorter(),),
+                 ('Role(s)', True, 'groups__name', SimpleSorter(),),
+                 ('District', False, 'district', None,),
+                 ('Last Reporting Date', True, 'latest_submission_date', LatestSubmissionSorter(),),
+                 ('Total Reports', True, 'connection__submissions__count', SimpleSorter(),),
+                 ('Facility', True, 'facility__name', SimpleSorter(),),
+                 ('Location', True, 'location__name', SimpleSorter(),),
+                 ('Active', True, 'active', SimpleSorter(),),
+                 ('', False, '', None,)],
+    }, name="kenya-contact"),
+
+) + router_urls + xform_urls + healthmodels_urls + contact_urls
 
 if settings.DEBUG:
     urlpatterns += patterns('',

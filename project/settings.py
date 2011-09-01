@@ -119,6 +119,7 @@ SMS_APPS = [
 # tabbed navigation. when adding an app to INSTALLED_APPS, you may wish
 # to add it here, also, to expose it in the rapidsms ui.
 RAPIDSMS_TABS = [
+    ("kenya-contact", "Reporters"),
     ("kenya-polls", "Polls"),
     ("contact-messagelog", "Message Log"),
 ]

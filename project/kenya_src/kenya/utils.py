@@ -1,35 +1,14 @@
 from django.contrib.auth.models import User, Group
-from rapidsms_xforms.models import XForm, XFormField, XFormFieldConstraint
-from script.models import Script, ScriptStep
+from rapidsms_xforms.models import XForm, XFormField, XFormFieldConstraint, XFormSubmission
+from script.models import Script, ScriptStep, ScriptSession
+from script.utils.handling import find_closest_match, find_best_response
 from poll.models import Poll
+from rapidsms.models import Contact
+from rapidsms.contrib.locations.models import Location
+from django.db.models import Count
+from healthmodels.models import HealthProvider, HealthFacility
+import datetime
 
-DISEASE_CHOICES = [
-    ('bd', 'int', 'Bloody diarrhea (Dysentery)', False),
-    ('dy', 'int', 'Dysentery', False),
-    ('ma', 'int', 'Malaria', False),
-    ('tb', 'int', 'Tuberculosis', False),
-    ('ab', 'int', 'Animal Bites', False),
-    ('af', 'int', 'Acute Flaccid Paralysis (Polio)', False),
-    ('mg', 'int', 'Meningitis', False),
-    ('me', 'int', 'Measles', False),
-    ('ch', 'int', 'Cholera', False),
-    ('gw', 'int', 'Guinea Worm', False),
-    ('nt', 'int', 'Neonatal Tetanus', False),
-    ('yf', 'int', 'Yellow Fever', False),
-    ('pl', 'int', 'Plague', False),
-    ('ra', 'int', 'Rabies', False),
-    ('rb', 'int', 'Rabies', False),
-    ('vf', 'int', 'Other Viral Hemorrhagic Fevers', False),
-    ('ei', 'int', 'Other Emerging Infectious Diseases', False),
-]
-
-HOME_ATTRIBUTES = [
-   ('to', 'int', 'Total Homesteads Visited', False),
-   ('it', 'int', 'ITTNs/LLINs', False),
-   ('la', 'int', 'Latrines', False),
-   ('ha', 'int', 'Handwashing Facilities', False),
-   ('wa', 'int', 'Safe Drinking Water', False),
-]
 
 XFORMS = (
     ('', 'epi', ',;:*.\\s"', 'Epi Report', 'Weekly-submitted epidemiological reports'),
@@ -37,6 +16,7 @@ XFORMS = (
     ('', 'cfp', ',;:*.\\s"', 'Child Friendly Schools Report', 'Weekly-submitted school reports'),
     ('', 'child', ',;:*.\\s"', 'Child Protection Sites Report', 'Weekly-submitted protection reports'),
 )
+
 
 XFORM_FIELDS = {
     'epi':[
@@ -48,30 +28,30 @@ XFORM_FIELDS = {
         ('stockout', 'int', 'stock outs', True),
     ],
     'nut':[
-        ('sam', 'int', 'sam admissions', True),
-        ('mam', 'int', 'mam admissions', True),
-        ('recover', 'int', 'recovered from treatment', True),
-        ('death', 'int', 'dead admittals', True),
+        ('sam', 'int', 'SAM', True),
+        ('mam', 'int', 'MAM', True),
+        ('recover', 'int', 'recovered', True),
+        ('death', 'int', 'deaths', True),
     ],
     'cfp':[
-        ('attm0', 'int', 'attendance m0-3', True),
-        ('attf0', 'int', 'attendance f0-3', True),
-        ('attm4', 'int', 'attendance m4-5', True),
-        ('attf4', 'int', 'attendance f4-5', True),
-        ('attm5', 'int', 'attendance m5-10', True),
-        ('attf5', 'int', 'attendance f5-10', True),
-        ('attm10', 'int', 'attendance m10+', True),
-        ('attf10', 'int', 'attendance f10+', True),
+        ('attm0', 'int', 'CFP 0-3(m)', True),
+        ('attf0', 'int', 'CFP 0-3(f)', True),
+        ('attm4', 'int', 'CFP 4-5(m)', True),
+        ('attf4', 'int', 'CFP 4-5(f)', True),
+        ('attm5', 'int', 'CFP 5-10(m)', True),
+        ('attf5', 'int', 'CFP 5-10(f)', True),
+        ('attm10', 'int', 'CFP 10+(m)', True),
+        ('attf10', 'int', 'CFP 10+(f)', True),
     ],
     'child':[
-        ('attm0', 'int', 'attendance m0-3', True),
-        ('attf0', 'int', 'attendance f0-3', True),
-        ('attm4', 'int', 'attendance m4-5', True),
-        ('attf4', 'int', 'attendance f4-5', True),
-        ('attm5', 'int', 'attendance m5-10', True),
-        ('attf5', 'int', 'attendance f5-10', True),
-        ('attm10', 'int', 'attendance m10+', True),
-        ('attf10', 'int', 'attendance f10+', True),
+        ('attm0', 'int', 'CFP 0-3(m)', True),
+        ('attf0', 'int', 'CFP 0-3(f)', True),
+        ('attm4', 'int', 'CFP 4-5(m)', True),
+        ('attf4', 'int', 'CFP 4-5(f)', True),
+        ('attm5', 'int', 'CFP 5-10(m)', True),
+        ('attf5', 'int', 'CFP 5-10(f)', True),
+        ('attm10', 'int', 'CFP 10+(m)', True),
+        ('attf10', 'int', 'CFP 10+(f)', True),
     ],
 }
 
@@ -122,6 +102,58 @@ def init_xforms_from_tuples(xforms, xform_fields):
             )
             order = order + 1
     return xform_dict
+
+
+def check_basic_validity(xform_type, submission, health_provider, day_range):
+    xform = XForm.objects.get(keyword=xform_type)
+    start_date = datetime.datetime.now() - datetime.timedelta(hours=(day_range * 24))
+    XFormSubmission.objects.filter(connection__contact__healthproviderbase__healthprovider=health_provider, \
+                                            xform=xform, \
+                                            created__gte=start_date)\
+                           .exclude(pk=submission.pk)\
+                           .update(has_errors=True)
+
+
+
+def xform_received_handler(sender, **kwargs):
+    xform = kwargs['xform']
+    submission = kwargs['submission']
+
+    if submission.has_errors:
+        submission.response = "Thank you for contacting us. If this was a routine weekly/monthly report, please check your form and resubmit. All other messages will be reviewed and responded to as appropriate."
+        submission.save()
+        return
+
+    # TODO: check validity
+    kwargs.setdefault('message', None)
+    message = kwargs['message']
+    try:
+        message = message.db_message
+        if not message:
+            return
+    except AttributeError:
+        return
+
+    try:
+        health_provider = submission.connection.contact.healthproviderbase.healthprovider
+    except:
+        submission.response = "Please first register with the system by texting in 'join'."
+        submission.has_errors = True
+        submission.save()
+        return
+
+    if xform.keyword in [i[1] for i in XFORMS]:
+        check_basic_validity(xform.keyword, submission, health_provider, 1)
+        value_list = []
+        for v in submission.eav.get_values():
+            value_list.append("%s %d" % (v.attribute.name, v.value_int))
+        value_list[len(value_list) - 1] = " and %s" % value_list[len(value_list) - 1]
+        submission.response = "You reported %s.If there is an error,please resend." % ','.join(value_list)
+
+        if not (submission.connection.contact and submission.connection.contact.active):
+            submission.has_errors = True
+
+        submission.save()
 
 
 def init_autoreg(sender, **kwargs):
@@ -283,3 +315,68 @@ def init_structures(sender, **kwargs):
         init_xforms(sender)
         init_autoreg(sender)
         structures_initialized = True
+
+
+def do_autoreg(**kwargs):
+    ''' 
+    Kenya autoreg post registration particulars handling. 
+    This method responds to a signal sent by the Script module on completion of the cvs_autoreg script
+    '''
+    connection = kwargs['connection']
+    progress = kwargs['sender']
+    if not progress.script.slug == 'autoreg':
+        return
+    session = ScriptSession.objects.filter(script=progress.script, connection=connection).order_by('-end_time')[0]
+    script = progress.script
+
+    contact = connection.contact.healthproviderbase.healthprovider or HealthProvider.objects.create()
+    connection.contact = contact
+    connection.save()
+
+    name_poll = script.steps.get(poll__name='autoreg_name')
+    org_poll = script.steps.get(poll__name='autoreg_org')
+    field_poll = script.steps.get(poll__name='autoreg_field')
+    district_poll = script.steps.get(poll__name='autoreg_district')
+    division_poll = script.steps.get(poll__name='autoreg_division')
+    constituencey_poll = script.steps.get(poll__name='autoreg_constituencey')
+    facility_poll = script.steps.get(poll__name='autoreg_facility')
+
+    org = find_best_response(session, org_poll)
+    org = find_closest_match(org, Group.objects) if org else Group.objects.get(name='Other Organizations')
+    contact.groups.add(org)
+
+    field = find_best_response(session, field_poll)
+    field = find_closest_match(field, Group.objects) if field else Group.objects.get(name='Other Fields')
+    contact.groups.add(field)
+
+    contact.name = find_best_response(session, name_poll) or 'Anonymous User'
+    contact.name = ' '.join([n.capitalize() for n in contact.name.lower().split()])
+    contact.name = contact.name[:100]
+
+    contact.reporting_location = find_best_response(session, district_poll)
+    division = find_best_response(session, division_poll)
+    if division:
+        tosearch = contact.reporting_location.get_descendants() if contact.reporting_location else \
+                    Location.objects.filter(type__name='district')
+        division = find_closest_match(division, tosearch)
+    if division:
+        contact.reporting_location = division
+
+    constituencey = find_best_response(session, constituencey_poll)
+    if constituencey:
+        tosearch = contact.reporting_location.get_descendants() if contact.reporting_location else \
+                    Location.objects.exclude(type__name__in=['country', 'district', 'division'])
+        constituencey = find_closest_match(constituencey, tosearch)
+    if constituencey:
+        contact.reporting_location = constituencey
+
+    healthfacility = find_best_response(session, facility_poll)
+    if healthfacility:
+        facility = find_closest_match(healthfacility, HealthFacility.objects)
+        if facility:
+            contact.facility = facility
+    contact.save()
+
+
+def get_polls(**kwargs):
+    return Poll.objects.exclude(pk__in=ScriptStep.objects.values_list('poll__pk', flat=True)).annotate(Count('responses'))
