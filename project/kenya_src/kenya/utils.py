@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User, Group
+from django.contrib.sites.models import Site
 from rapidsms_xforms.models import XForm, XFormField, XFormFieldConstraint, XFormSubmission
 from script.models import Script, ScriptStep, ScriptSession
 from script.utils.handling import find_closest_match, find_best_response
@@ -73,6 +74,7 @@ def init_xforms_from_tuples(xforms, xform_fields):
                 'owner':user,
                 'separator':separator,
                 'command_prefix':'',
+                'site':Site.objects.get_current()
             }
         )
         xform_dict["%s%s" % (keyword_prefix, keyword)] = xform
@@ -162,7 +164,7 @@ def init_autoreg(sender, **kwargs):
             'name':"Default autoregistration script"})
     if created:
         user, created = User.objects.get_or_create(username="admin")
-
+        script.sites.add(Site.objects.get_current())
         name_poll = Poll.objects.create(\
             name='autoreg_name', \
             user=user, type=Poll.TYPE_TEXT, \
@@ -271,7 +273,7 @@ def init_autoreg(sender, **kwargs):
             user=user, \
             type=Poll.TYPE_TEXT, \
             name='autoreg_facility',
-            question='What is the name of the constituencey you work in?', \
+            question='What is the name of the facility you work in?', \
             default_response='', \
         )
         script.steps.add(ScriptStep.objects.create(
@@ -293,6 +295,8 @@ def init_autoreg(sender, **kwargs):
             start_offset=60,
             giveup_offset=0,
         ))
+        for poll in [name_poll, org_poll, field_poll, district_poll, division_poll, const_poll, facility_poll]:
+            poll.sites.add(Site.objects.get_current())
 
 def init_groups():
     for g in ['UNICEF', 'NGO', 'Government', 'Other Organizations', 'Health', 'Education', 'Child Protection', 'WASH', 'Other Fields']:
@@ -312,7 +316,7 @@ def init_structures(sender, **kwargs):
             return
     if not structures_initialized:
         init_groups()
-        init_xforms(sender)
+        init_xforms()
         init_autoreg(sender)
         structures_initialized = True
 
@@ -329,17 +333,17 @@ def do_autoreg(**kwargs):
     session = ScriptSession.objects.filter(script=progress.script, connection=connection).order_by('-end_time')[0]
     script = progress.script
 
-    contact = connection.contact.healthproviderbase.healthprovider or HealthProvider.objects.create()
+    contact = connection.contact.healthproviderbase.healthprovider if connection.contact else HealthProvider.objects.create()
     connection.contact = contact
     connection.save()
 
-    name_poll = script.steps.get(poll__name='autoreg_name')
-    org_poll = script.steps.get(poll__name='autoreg_org')
-    field_poll = script.steps.get(poll__name='autoreg_field')
-    district_poll = script.steps.get(poll__name='autoreg_district')
-    division_poll = script.steps.get(poll__name='autoreg_division')
-    constituencey_poll = script.steps.get(poll__name='autoreg_constituencey')
-    facility_poll = script.steps.get(poll__name='autoreg_facility')
+    name_poll = script.steps.get(poll__name='autoreg_name').poll
+    org_poll = script.steps.get(poll__name='autoreg_org').poll
+    field_poll = script.steps.get(poll__name='autoreg_field').poll
+    district_poll = script.steps.get(poll__name='autoreg_district').poll
+    division_poll = script.steps.get(poll__name='autoreg_division').poll
+    constituencey_poll = script.steps.get(poll__name='autoreg_constituencey').poll
+    facility_poll = script.steps.get(poll__name='autoreg_facility').poll
 
     org = find_best_response(session, org_poll)
     org = find_closest_match(org, Group.objects) if org else Group.objects.get(name='Other Organizations')
