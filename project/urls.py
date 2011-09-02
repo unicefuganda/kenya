@@ -2,19 +2,20 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 from django.contrib import admin
 from rapidsms_httprouter.urls import urlpatterns as router_urls
+from rapidsms_httprouter.models import Message
 from ureport.urls import urlpatterns as ureport_urls
 from rapidsms_xforms.urls import urlpatterns as xform_urls
 from healthmodels.urls import urlpatterns as healthmodels_urls
 from contact.urls import urlpatterns as contact_urls
 from django.views.generic.simple import direct_to_template
 from generic.views import generic
-from generic.sorters import SimpleSorter
+from generic.sorters import SimpleSorter, TupleSorter
 from poll.models import Poll
 from kenya.views import view_responses
-from kenya.utils import get_polls
+from kenya.utils import get_polls, get_messages, get_mass_messages
 from ureport.models import MassText
 from ureport.forms import AssignToNewPollForm
-from contact.forms import FreeSearchForm, DistictFilterForm, MassTextForm
+from contact.forms import FreeSearchForm, DistictFilterForm, MassTextForm, FreeSearchTextForm, DistictFilterMessageForm, HandledByForm, FlaggedForm, ReplyTextForm, FlagMessageForm
 from kenya.forms import FacilityFilterForm, GoLiveForm
 from django.contrib.auth.decorators import login_required
 from healthmodels.models.HealthProvider import HealthProviderBase
@@ -80,7 +81,39 @@ urlpatterns = patterns('',
                  ('Active', True, 'active', SimpleSorter(),),
                  ('', False, '', None,)],
     }, name="kenya-contact"),
-
+   url(r'^contact/messagelog/$', login_required(generic), {
+      'model':Message,
+      'queryset':get_messages,
+      'filter_forms':[FreeSearchTextForm, DistictFilterMessageForm, HandledByForm, FlaggedForm],
+      'action_forms':[ReplyTextForm, FlagMessageForm],
+      'objects_per_page':25,
+      'partial_row':'contact/partials/message_row.html',
+      'base_template':'contact/messages_base.html',
+      'columns':[('Text', True, 'text', SimpleSorter()),
+                 ('Contact Information', True, 'connection__contact__name', SimpleSorter(),),
+                 ('Date', True, 'date', SimpleSorter(),),
+                 ('Type', True, 'application', SimpleSorter(),),
+                 ('Response', False, 'response', None,),
+                 ],
+      'sort_column':'date',
+      'sort_ascending':False,
+    }, name="contact-messagelog"),
+   url(r'^contact/massmessages/$', login_required(generic), {
+      'model':MassText,
+      'queryset':get_mass_messages,
+      'objects_per_page':10,
+      'partial_row':'contact/partials/mass_message_row.html',
+      'base_template':'contact/mass_messages_base.html',
+      'columns':[('Message', True, 'text', TupleSorter(0)),
+                 ('Time', True, 'date', TupleSorter(1),),
+                 ('User', True, 'user', TupleSorter(2),),
+                 ('Recipients', True, 'response', TupleSorter(3),),
+                 ('Type', True, 'type', TupleSorter(4),),
+                 ],
+      'sort_column':'date',
+      'sort_ascending':False,
+      'selectable':False,
+    }),
 ) + router_urls + xform_urls + healthmodels_urls + contact_urls
 
 if settings.DEBUG:
