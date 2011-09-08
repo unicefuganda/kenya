@@ -356,12 +356,12 @@ def do_autoreg(**kwargs):
     facility_poll = script.steps.get(poll__name='autoreg_facility').poll
 
     org = find_best_response(session, org_poll)
-    org = find_closest_match(org, Group.objects) if org else Group.objects.get(name='Other Organizations')
-    contact.groups.add(org)
+    org = find_closest_match(org, Group.objects) if org else None
+    contact.groups.add(org or Group.objects.get(name='Other Organizations'))
 
     field = find_best_response(session, field_poll)
-    field = find_closest_match(field, Group.objects) if field else Group.objects.get(name='Other Fields')
-    contact.groups.add(field)
+    field = find_closest_match(field, Group.objects) if field else None
+    contact.groups.add(field or Group.objects.get(name='Other Fields'))
 
     contact.name = find_best_response(session, name_poll) or 'Anonymous User'
     contact.name = ' '.join([n.capitalize() for n in contact.name.lower().split()])
