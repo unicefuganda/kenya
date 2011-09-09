@@ -393,4 +393,4 @@ def do_autoreg(**kwargs):
 
 
 def get_polls(**kwargs):
-    return Poll.objects.exclude(pk__in=ScriptStep.objects.values_list('poll__pk', flat=True)).annotate(Count('responses'))
+    return Poll.objects.exclude(pk__in=ScriptStep.objects.exclude(poll=None).values_list('poll__pk', flat=True)).annotate(Count('responses'))

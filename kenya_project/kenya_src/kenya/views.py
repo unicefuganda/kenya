@@ -8,11 +8,7 @@ from django.shortcuts import  render_to_response, redirect, get_object_or_404
 @login_required
 def view_responses(req, poll_id):
     poll = get_object_or_404(Poll, pk=poll_id)
-
-    if hasattr(Contact, 'groups'):
-        responses = poll.responses.filter(contact__groups__in=req.user.groups.all()).distinct()
-    else:
-        responses = poll.responses.all()
+    responses = poll.responses.all()
     responses = responses.order_by('-date')
     response_rates = {}
     for group in req.user.groups.all():
