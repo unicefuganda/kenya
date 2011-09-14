@@ -4,14 +4,13 @@ from rapidsms_xforms.models import XForm, XFormField, XFormFieldConstraint, XFor
 from script.models import Script, ScriptStep, ScriptSession
 from script.utils.handling import find_closest_match, find_best_response
 from poll.models import Poll
-from rapidsms.models import Contact
 from rapidsms.contrib.locations.models import Location
 from django.db.models import Count
-from healthmodels.models import HealthProvider, HealthFacility
+from healthmodels.models import HealthProvider
 import datetime
 from rapidsms_httprouter.models import Message
 from ureport.models import MassText
-from poll.models import Poll
+
 
 
 def get_messages(**kwargs):
@@ -31,12 +30,9 @@ XFORMS = (
 
 XFORM_FIELDS = {
     'epi':[
-        ('b_measlvac', 'int', 'boys measles vaccination', True),
-        ('g_measlvac', 'int', 'girls measles vaccination', True),
-        ('b_immm', 'int', 'boys full vaccination', True),
-        ('g_immm', 'int', 'girls full vaccination', True),
-        ('kits', 'int', 'emergency health kits', True),
-        ('stockout', 'int', 'stock outs', True),
+        ('dairrhea', 'int', 'acute water diarrhea cases', True),
+        ('measles', 'int', 'suspected measels cases', True),
+        ('lrti', 'int', 'LRTI/ARI cases', True),
     ],
     'nut':[
         ('sam', 'int', 'SAM', True),
@@ -45,24 +41,10 @@ XFORM_FIELDS = {
         ('death', 'int', 'deaths', True),
     ],
     'cfp':[
-        ('attm0', 'int', 'CFP 0-3(m)', True),
-        ('attf0', 'int', 'CFP 0-3(f)', True),
-        ('attm4', 'int', 'CFP 4-5(m)', True),
-        ('attf4', 'int', 'CFP 4-5(f)', True),
-        ('attm5', 'int', 'CFP 5-10(m)', True),
-        ('attf5', 'int', 'CFP 5-10(f)', True),
-        ('attm10', 'int', 'CFP 10+(m)', True),
-        ('attf10', 'int', 'CFP 10+(f)', True),
+        ('visits', 'int', 'child visits', True),
     ],
     'child':[
-        ('attm0', 'int', 'CFP 0-3(m)', True),
-        ('attf0', 'int', 'CFP 0-3(f)', True),
-        ('attm4', 'int', 'CFP 4-5(m)', True),
-        ('attf4', 'int', 'CFP 4-5(f)', True),
-        ('attm5', 'int', 'CFP 5-10(m)', True),
-        ('attf5', 'int', 'CFP 5-10(f)', True),
-        ('attm10', 'int', 'CFP 10+(m)', True),
-        ('attf10', 'int', 'CFP 10+(f)', True),
+        ('visits', 'int', 'child visits', True),
     ],
 }
 
@@ -225,71 +207,17 @@ def init_autoreg(sender, **kwargs):
             giveup_offset=86400,
         ))
 
-        district_poll = Poll.objects.create(
+        camp_poll = Poll.objects.create(
             user=user, \
-            type='district', \
-            name='autoreg_district',
-            question='What is the name of the district you work in?', \
+            type=Poll.TYPE_TEXT, \
+            name='autoreg_camp',
+            question='What is the name of the camp you work in?', \
             default_response='', \
         )
         script.steps.add(ScriptStep.objects.create(
             script=script,
-            poll=district_poll,
+            poll=camp_poll,
             order=3,
-            rule=ScriptStep.STRICT_MOVEON,
-            start_offset=0,
-            retry_offset=86400,
-            num_tries=1,
-            giveup_offset=86400,
-        ))
-
-        division_poll = Poll.objects.create(
-            user=user, \
-            type=Poll.TYPE_TEXT, \
-            name='autoreg_division',
-            question='What is the name of the division you work in?', \
-            default_response='', \
-        )
-        script.steps.add(ScriptStep.objects.create(
-            script=script,
-            poll=division_poll,
-            order=4,
-            rule=ScriptStep.RESEND_MOVEON,
-            start_offset=0,
-            retry_offset=86400,
-            num_tries=1,
-            giveup_offset=86400,
-        ))
-
-        const_poll = Poll.objects.create(
-            user=user, \
-            type=Poll.TYPE_TEXT, \
-            name='autoreg_constituencey',
-            question='What is the name of the constituencey you work in?', \
-            default_response='', \
-        )
-        script.steps.add(ScriptStep.objects.create(
-            script=script,
-            poll=const_poll,
-            order=5,
-            rule=ScriptStep.RESEND_MOVEON,
-            start_offset=0,
-            retry_offset=86400,
-            num_tries=1,
-            giveup_offset=86400,
-        ))
-
-        facility_poll = Poll.objects.create(
-            user=user, \
-            type=Poll.TYPE_TEXT, \
-            name='autoreg_facility',
-            question='What is the name of the facility you work in?', \
-            default_response='', \
-        )
-        script.steps.add(ScriptStep.objects.create(
-            script=script,
-            poll=facility_poll,
-            order=6,
             rule=ScriptStep.RESEND_MOVEON,
             start_offset=0,
             retry_offset=86400,
@@ -300,16 +228,16 @@ def init_autoreg(sender, **kwargs):
         script.steps.add(ScriptStep.objects.create(
             script=script,
             message="Welcome to the UNICEF Kenya data collection system. You are now a fully registered member. Your timely reports are very import to us!",
-            order=7,
+            order=4,
             rule=ScriptStep.WAIT_MOVEON,
             start_offset=60,
             giveup_offset=0,
         ))
-        for poll in [name_poll, org_poll, field_poll, district_poll, division_poll, const_poll, facility_poll]:
+        for poll in [name_poll, org_poll, field_poll, camp_poll]:
             poll.sites.add(Site.objects.get_current())
 
 def init_groups():
-    for g in ['UNICEF', 'NGO', 'Government', 'Other Organizations', 'Health', 'Education', 'Child Protection', 'WASH', 'Other Fields']:
+    for g in ['UNICEF', 'UNHCR', 'NGO', 'Government', 'Other Organizations', 'Health', 'Education', 'Child Protection', 'WASH', 'Water and Sanitation', 'Other Fields']:
         Group.objects.get_or_create(name=g)
 
 models_created = []
@@ -350,10 +278,7 @@ def do_autoreg(**kwargs):
     name_poll = script.steps.get(poll__name='autoreg_name').poll
     org_poll = script.steps.get(poll__name='autoreg_org').poll
     field_poll = script.steps.get(poll__name='autoreg_field').poll
-    district_poll = script.steps.get(poll__name='autoreg_district').poll
-    division_poll = script.steps.get(poll__name='autoreg_division').poll
-    constituencey_poll = script.steps.get(poll__name='autoreg_constituencey').poll
-    facility_poll = script.steps.get(poll__name='autoreg_facility').poll
+    camp_poll = script.steps.get(poll__name='autoreg_camp').poll
 
     org = find_best_response(session, org_poll)
     org = find_closest_match(org, Group.objects) if org else None
@@ -367,28 +292,10 @@ def do_autoreg(**kwargs):
     contact.name = ' '.join([n.capitalize() for n in contact.name.lower().split()])
     contact.name = contact.name[:100]
 
-    contact.reporting_location = find_best_response(session, district_poll)
-    division = find_best_response(session, division_poll)
-    if division:
-        tosearch = contact.reporting_location.get_descendants() if contact.reporting_location else \
-                    Location.objects.filter(type__name='district')
-        division = find_closest_match(division, tosearch)
-    if division:
-        contact.reporting_location = division
+    camp = find_best_response(session, camp_poll)
+    if camp:
+        contact.reporting_location = find_closest_match(camp, Location.objects.filter(type__slug='camp'))
 
-    constituencey = find_best_response(session, constituencey_poll)
-    if constituencey:
-        tosearch = contact.reporting_location.get_descendants() if contact.reporting_location else \
-                    Location.objects.exclude(type__name__in=['country', 'district', 'division'])
-        constituencey = find_closest_match(constituencey, tosearch)
-    if constituencey:
-        contact.reporting_location = constituencey
-
-    healthfacility = find_best_response(session, facility_poll)
-    if healthfacility:
-        facility = find_closest_match(healthfacility, HealthFacility.objects)
-        if facility:
-            contact.facility = facility
     contact.save()
 
 

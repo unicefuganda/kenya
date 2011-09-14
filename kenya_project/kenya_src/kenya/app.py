@@ -9,7 +9,7 @@ class App (AppBase):
     def handle (self, message):
         if getattr(settings, 'ACTIVATION_CODE', None) and message.text.strip().lower() == settings.ACTIVATION_CODE:
             if not message.connection.contact:
-                message.respond('You must first register with the system.Text JOIN to 6767 to begin.')
+                message.respond('You must first register with the system.Text JOIN to begin.')
                 return True
             if not message.connection.contact.active:
                 message.connection.contact.active = True
