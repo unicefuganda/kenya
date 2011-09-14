@@ -41,10 +41,12 @@ XFORM_FIELDS = {
         ('death', 'int', 'deaths', True),
     ],
     'cfp':[
-        ('visits', 'int', 'child visits', True),
+        ('bvisits', 'int', 'boys visits', True),
+        ('gvisits', 'int', 'girls visits', True),
     ],
     'child':[
-        ('visits', 'int', 'child visits', True),
+        ('bvisits', 'int', 'boys visits', True),
+        ('gvisits', 'int', 'girls visits', True),
     ],
 }
 
