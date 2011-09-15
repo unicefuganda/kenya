@@ -28,11 +28,9 @@
             {% endfor %}
         </ul>
     </td>
-    <td>{{ object.reporting_location|get_district }}</td>
     <td>{{ object|latest|date:"d-m-Y" }}</td>
     <td>{{ object.connection__submissions__count }}</td>
-    <td>{{ object.facility }}</td>
-    <td id="row_{{ object.pk }}">{{ object.location.name }}</td>
+    <td id="row_{{ object.pk }}">{{ object.reporting_location.name }}</td>
     <td>{{ object.active }}</td>
     <td class="button_col">
         <div class="buttons">

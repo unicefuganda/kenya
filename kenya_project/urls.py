@@ -16,7 +16,7 @@ from kenya.utils import get_polls, get_messages, get_mass_messages
 from ureport.models import MassText
 from ureport.forms import AssignToNewPollForm
 from contact.forms import FreeSearchForm, DistictFilterForm, MassTextForm, FreeSearchTextForm, DistictFilterMessageForm, HandledByForm, FlaggedForm, ReplyTextForm, FlagMessageForm
-from kenya.forms import FacilityFilterForm, GoLiveForm
+from kenya.forms import FacilityFilterForm, GoLiveForm, LocationFilterForm
 from django.contrib.auth.decorators import login_required
 from healthmodels.models.HealthProvider import HealthProviderBase
 from kenya.sorters import LatestSubmissionSorter
@@ -64,7 +64,7 @@ urlpatterns = patterns('',
    #reporters
     url(r'^reporter/$', login_required(generic), {
       'model':HealthProviderBase,
-      'filter_forms':[FreeSearchForm, DistictFilterForm, FacilityFilterForm],
+      'filter_forms':[FreeSearchForm, LocationFilterForm, FacilityFilterForm],
       'action_forms':[MassTextForm, GoLiveForm, AssignToNewPollForm],
       'objects_per_page':25,
       'partial_row':'kenya/partials/reporter_row.html',
@@ -73,10 +73,8 @@ urlpatterns = patterns('',
       'columns':[('Name', True, 'name', SimpleSorter()),
                  ('Number', True, 'connection__identity', SimpleSorter(),),
                  ('Role(s)', True, 'groups__name', SimpleSorter(),),
-                 ('District', False, 'district', None,),
                  ('Last Reporting Date', True, 'latest_submission_date', LatestSubmissionSorter(),),
                  ('Total Reports', True, 'connection__submissions__count', SimpleSorter(),),
-                 ('Facility', True, 'facility__name', SimpleSorter(),),
                  ('Location', True, 'location__name', SimpleSorter(),),
                  ('Active', True, 'active', SimpleSorter(),),
                  ('', False, '', None,)],
