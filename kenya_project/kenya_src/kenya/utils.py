@@ -32,7 +32,7 @@ XFORM_FIELDS = {
     'epi':[
         ('dairrhea', 'int', 'acute water diarrhea cases', True),
         ('measles', 'int', 'suspected measels cases', True),
-        ('lrti', 'int', 'LRTI/ARI cases', True),
+#        ('lrti', 'int', 'LRTI/ARI cases', True),
     ],
     'nut':[
         ('sam', 'int', 'SAM', True),
