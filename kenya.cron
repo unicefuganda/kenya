@@ -1,0 +1,2 @@
+0 9 * * 2 python /var/www/prod/kenya/kenya_project/manage.py weekly_poll --open
+0 17 * * 2 python /var/www/prod/kenya/kenya_project/manage.py weekly_poll --close
