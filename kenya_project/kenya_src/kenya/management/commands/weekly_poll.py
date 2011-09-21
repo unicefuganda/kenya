@@ -23,8 +23,8 @@ class Command(BaseCommand):
         if open:
             p = Poll.create_with_bulk(\
                 name=poll_name, \
-                question='Do you have access to water at your place of work?  Please reply with YES or NO.', \
-                default_response='Thank you for your water report.', \
+                question='Do you have access to water?  Please reply with YES or NO.', \
+                default_response='Thank you for your report.', \
                 user=user, \
                 contacts=Contact.objects.all(), \
                 type=Poll.TYPE_TEXT, \

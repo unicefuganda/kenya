@@ -253,7 +253,7 @@ def init_autoreg(sender, **kwargs):
             start_offset=60,
             giveup_offset=0,
         ))
-        for poll in [name_poll, org_poll, field_poll, camp_poll]:
+        for poll in [name_poll, org_poll, field_poll, building_poll, division_poll]:
             poll.sites.add(Site.objects.get_current())
 
 def init_groups():
