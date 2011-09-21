@@ -10,8 +10,8 @@ from healthmodels.models import HealthProvider
 import datetime
 from rapidsms_httprouter.models import Message
 from ureport.models import MassText
-
-
+from kenya.schools.models import School
+from healthmodels.models import HealthFacility
 
 def get_messages(**kwargs):
     return Message.objects.filter(direction='I')
@@ -209,17 +209,35 @@ def init_autoreg(sender, **kwargs):
             giveup_offset=86400,
         ))
 
-        camp_poll = Poll.objects.create(
+        division_poll = Poll.objects.create(
             user=user, \
             type=Poll.TYPE_TEXT, \
-            name='autoreg_camp',
-            question='What is the name of the camp you work in?', \
+            name='autoreg_division',
+            question='What division do you work in?', \
             default_response='', \
         )
         script.steps.add(ScriptStep.objects.create(
             script=script,
-            poll=camp_poll,
+            poll=division_poll,
             order=3,
+            rule=ScriptStep.RESEND_MOVEON,
+            start_offset=0,
+            retry_offset=86400,
+            num_tries=1,
+            giveup_offset=86400,
+        ))
+
+        building_poll = Poll.objects.create(
+            user=user, \
+            type=Poll.TYPE_TEXT, \
+            name='autoreg_building',
+            question='What is the name of the facility or school you work in?', \
+            default_response='', \
+        )
+        script.steps.add(ScriptStep.objects.create(
+            script=script,
+            poll=building_poll,
+            order=4,
             rule=ScriptStep.RESEND_MOVEON,
             start_offset=0,
             retry_offset=86400,
@@ -230,7 +248,7 @@ def init_autoreg(sender, **kwargs):
         script.steps.add(ScriptStep.objects.create(
             script=script,
             message="Welcome to the UNICEF Kenya data collection system. You are now a fully registered member. Your timely reports are very import to us!",
-            order=4,
+            order=5,
             rule=ScriptStep.WAIT_MOVEON,
             start_offset=60,
             giveup_offset=0,
@@ -280,7 +298,8 @@ def do_autoreg(**kwargs):
     name_poll = script.steps.get(poll__name='autoreg_name').poll
     org_poll = script.steps.get(poll__name='autoreg_org').poll
     field_poll = script.steps.get(poll__name='autoreg_field').poll
-    camp_poll = script.steps.get(poll__name='autoreg_camp').poll
+    division_poll = script.steps.get(poll__name='autoreg_division').poll
+    building_poll = script.steps.get(poll__name='autoreg_building').poll
 
     org = find_best_response(session, org_poll)
     org = find_closest_match(org, Group.objects) if org else None
@@ -294,8 +313,19 @@ def do_autoreg(**kwargs):
     contact.name = ' '.join([n.capitalize() for n in contact.name.lower().split()])
     contact.name = contact.name[:100]
 
-    camp = find_best_response(session, camp_poll)
-    if camp:
+    division = find_best_response(session, division_poll)
+    schools = School.objects
+    facilities = HealthFacility.objects
+    if division:
+        division = find_closest_match(division, Location.objects.filter(type__name='division'))
+        if division:
+            contact.reporting_location = division
+            schools = School.objects.filter(location__in=division.get_descendants(include_self=True))
+
+    building = find_best_response(session, building_poll)
+    building = find_best_response(session, building_poll)
+    if building:
+        school == find_closest_match(building, School.objects.filter(location__in))
         contact.reporting_location = find_closest_match(camp, Location.objects.filter(type__slug='camp'))
 
     contact.save()

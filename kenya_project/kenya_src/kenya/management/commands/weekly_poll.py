@@ -21,13 +21,14 @@ class Command(BaseCommand):
         poll_name = "%s Regular Wash Poll" % d.strftime("%Y-%m-%d")
         user = User.objects.get(username='admin')
         if open:
-            p = Poll.create_with_bulk(name=poll_name,
-                                    question='',
-                                    default_response='',
-                                    user=user,
-                                    contacts=Contact.objects.all(),
-                                    type=Poll.TYPE_TEXT,
-                                    )
+            p = Poll.create_with_bulk(\
+                name=poll_name, \
+                question='Is your water point working today?  Please reply with YES or NO.', \
+                default_response='Thank you for your water point report.', \
+                user=user, \
+                contacts=Contact.objects.all(), \
+                type=Poll.TYPE_TEXT, \
+            )
             p.add_yesno_categories()
             p.start()
         elif close:

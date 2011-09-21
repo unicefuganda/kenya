@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "uni_form",
     "django_extensions",
     "kenya",
+    "kenya.schools",
     # common dependencies (which don't clutter up the ui).
     "rapidsms.contrib.handlers",
     "django.contrib.sites",
