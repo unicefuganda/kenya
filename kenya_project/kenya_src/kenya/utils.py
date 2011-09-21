@@ -321,12 +321,12 @@ def do_autoreg(**kwargs):
         if division:
             contact.reporting_location = division
             schools = School.objects.filter(location__in=division.get_descendants(include_self=True))
+            facilities = HealthFacility.objects.filter(catchment_areas__in=division.get_descendants(include_self=True))
 
     building = find_best_response(session, building_poll)
-    building = find_best_response(session, building_poll)
     if building:
-        school == find_closest_match(building, School.objects.filter(location__in))
-        contact.reporting_location = find_closest_match(camp, Location.objects.filter(type__slug='camp'))
+        contact.school = find_closest_match(building, schools)
+        contact.health_facility = find_closest_match(building, facilities)
 
     contact.save()
 
