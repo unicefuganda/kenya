@@ -6,12 +6,11 @@ from script.utils.handling import find_closest_match, find_best_response
 from poll.models import Poll
 from rapidsms.contrib.locations.models import Location
 from django.db.models import Count
-from healthmodels.models import HealthProvider
 import datetime
 from rapidsms_httprouter.models import Message
 from ureport.models import MassText
 from kenya.schools.models import School
-from healthmodels.models import HealthFacility
+from kenya.healthfacility.models import HealthFacility
 
 def get_messages(**kwargs):
     return Message.objects.filter(direction='I')
@@ -291,7 +290,7 @@ def do_autoreg(**kwargs):
     session = ScriptSession.objects.filter(script=progress.script, connection=connection).order_by('-end_time')[0]
     script = progress.script
 
-    contact = connection.contact.healthproviderbase.healthprovider if connection.contact else HealthProvider.objects.create()
+    contact = connection.contact if connection.contact else Contact.objects.create()
     connection.contact = contact
     connection.save()
 

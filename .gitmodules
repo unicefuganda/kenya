@@ -10,9 +10,6 @@
 [submodule "kenya_project/rapidsms_generic"]
 	path = kenya_project/rapidsms_generic
 	url = git://github.com/unicefuganda/rapidsms-generic
-[submodule "kenya_project/rapidsms_healthmodels"]
-	path = kenya_project/rapidsms_healthmodels
-	url = git://github.com/unicefuganda/rapidsms-healthmodels
 [submodule "kenya_project/rapidsms_httprouter_src"]
 	path = kenya_project/rapidsms_httprouter_src
 	url = git://github.com/unicefuganda/rapidsms-httprouter

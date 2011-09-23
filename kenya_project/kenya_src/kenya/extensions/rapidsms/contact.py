@@ -1,7 +1,7 @@
 from django.db import models
 
 from kenya.schools.models import School
-from healthmodels.models.HealthFacility import HealthFacility
+from kenya.healthfacility.models import HealthFacility
 
 class ActivatedContact(models.Model):
     """
