@@ -129,9 +129,8 @@ def xform_received_handler(sender, **kwargs):
     except AttributeError:
         return
 
-    try:
-        health_provider = submission.connection.contact.healthproviderbase.healthprovider
-    except:
+    health_provider = submission.connection.contact
+    if not health_provider:
         submission.response = "Please first register with the system by texting in 'join'."
         submission.has_errors = True
         submission.save()
