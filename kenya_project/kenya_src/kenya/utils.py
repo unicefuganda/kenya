@@ -102,7 +102,7 @@ def init_xforms_from_tuples(xforms, xform_fields):
 def check_basic_validity(xform_type, submission, health_provider, day_range):
     xform = XForm.objects.get(keyword=xform_type)
     start_date = datetime.datetime.now() - datetime.timedelta(hours=(day_range * 24))
-    XFormSubmission.objects.filter(connection__contact__healthproviderbase__healthprovider=health_provider, \
+    XFormSubmission.objects.filter(connection__contact=health_provider, \
                                             xform=xform, \
                                             created__gte=start_date)\
                            .exclude(pk=submission.pk)\
