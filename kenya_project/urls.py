@@ -5,7 +5,6 @@ from rapidsms_httprouter.urls import urlpatterns as router_urls
 from rapidsms_httprouter.models import Message
 from ureport.urls import urlpatterns as ureport_urls
 from rapidsms_xforms.urls import urlpatterns as xform_urls
-from healthmodels.urls import urlpatterns as healthmodels_urls
 from contact.urls import urlpatterns as contact_urls
 from django.views.generic.simple import direct_to_template
 from generic.views import generic
@@ -18,7 +17,7 @@ from ureport.forms import AssignToNewPollForm
 from contact.forms import FreeSearchForm, DistictFilterForm, MassTextForm, FreeSearchTextForm, DistictFilterMessageForm, HandledByForm, FlaggedForm, ReplyTextForm, FlagMessageForm
 from kenya.forms import FacilityFilterForm, GoLiveForm, LocationFilterForm
 from django.contrib.auth.decorators import login_required
-from healthmodels.models.HealthProvider import HealthProviderBase
+
 from kenya.sorters import LatestSubmissionSorter
 admin.autodiscover()
 
@@ -63,7 +62,7 @@ urlpatterns = patterns('',
     url(r"^(\d+)/responses/$", view_responses, name="kenya-responses"),
    #reporters
     url(r'^reporter/$', login_required(generic), {
-      'model':HealthProviderBase,
+      'model':Contact,
       'filter_forms':[FreeSearchForm, LocationFilterForm, FacilityFilterForm],
       'action_forms':[MassTextForm, GoLiveForm, AssignToNewPollForm],
       'objects_per_page':25,
@@ -112,7 +111,7 @@ urlpatterns = patterns('',
       'sort_ascending':False,
       'selectable':False,
     }),
-) + router_urls + xform_urls + healthmodels_urls + contact_urls
+) + router_urls + xform_urls + contact_urls
 
 if settings.DEBUG:
     urlpatterns += patterns('',

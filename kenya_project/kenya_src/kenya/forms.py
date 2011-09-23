@@ -1,5 +1,5 @@
 from generic.forms import FilterForm, ActionForm
-from healthmodels.models import HealthFacility
+from kenya.healthfacility.models import HealthFacility
 from django import forms
 from rapidsms.contrib.locations.models import Location
 
