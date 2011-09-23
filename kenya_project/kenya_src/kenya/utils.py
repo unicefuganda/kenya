@@ -11,6 +11,8 @@ from rapidsms_httprouter.models import Message
 from ureport.models import MassText
 from kenya.schools.models import School
 from kenya.healthfacility.models import HealthFacility
+from rapidsms.models import Contact
+
 
 def get_messages(**kwargs):
     return Message.objects.filter(direction='I')
