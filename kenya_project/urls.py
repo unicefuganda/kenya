@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
 from django.contrib import admin
+from rapidsms.models import Contact
 from rapidsms_httprouter.urls import urlpatterns as router_urls
 from rapidsms_httprouter.models import Message
 from ureport.urls import urlpatterns as ureport_urls
